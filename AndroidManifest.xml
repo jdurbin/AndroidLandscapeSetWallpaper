@@ -33,9 +33,10 @@
          to display to the user for the overall application, and provides
          a default label for all following components.  The syntax here is a
          reference to one of our string resources.-->
-    <application android:label="@string/streaksetwallpaper_app">
+    <application android:label="@string/streaksetwallpaper_app" android:icon="@drawable/icon">
 
-        <!-- An Activity in the application - this is something the user
+  
+      <!-- An Activity in the application - this is something the user
              can launch and interact with.  The "name" attribute is the
              name of the class within your package that implements this
              activity. -->

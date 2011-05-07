@@ -1,0 +1,10 @@
+This is an Android app with a simple purpose:  set wallpaper correctly in landscape orientation on the Dell Streak. 
+
+A lot of Android apps, including the gallery app, have a portrait bias.  So, when you select a picture to set as 
+your wallpaper, the crop view it shows you is the one appropriate for portrait orientation.  The wall paper looks OK in 
+portrait, but seems to have the top and bottom chopped off in landscape. 
+
+This app does one simple thing, it tells the gallery to crop with the 5:2 landscape ratio (e.g. 1600 x 480 pixels) that 
+works for landscape wallpaper.   What it doesn't do is any kind of stretching or pulling of the image to make it fit.  It's
+purely a crop tool.  
+

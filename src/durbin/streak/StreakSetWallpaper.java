@@ -50,11 +50,6 @@ import android.widget.EditText;
 
 
 /***
-* Android, or maybe just the Streak, doesn't handle landscape wallpapers the way I think
-* it should.  No matter what you do, it crops off the top and bottom of the image.  I generally
-* want to see the whole image, scaled to fit the display.  Since the cropping seems to happen
-* in the guts of Android, out of my reach (AFAIK, with my limited knowledge), I am taking the
-* tact of expanding the image by a set amount on top and bottom. 
 * 
 */ 
 public class StreakSetWallpaper extends Activity {
@@ -122,10 +117,19 @@ public class StreakSetWallpaper extends Activity {
 					android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI);
 					
 				i.putExtra("crop", "true");	
+				
+				// Return the data in the Intent... risky for big data.  Some people save to temp
+				// file instead, and maybe I'll be forced to do that eventually, but I'd rather not...
+				// see: http://stackoverflow.com/questions/4516997/fail-to-crop-for-large-images
+				// for alternative.... I think I have no choice really now...
+				
+				
 				i.putExtra("return-data",true);	
 				
-				//i.putExtra("outputX", 1200);
+				// Putting these in causes frequent failures instead of occasional failures without. 
+				//i.putExtra("outputX", 1200); 
 				//i.putExtra("outputY", 480);
+				
 				//i.putExtra("setWallpaper", true);  // This doesn't seem to do anything.
 				
 				i.putExtra("aspectX", 5);
@@ -170,8 +174,7 @@ public class StreakSetWallpaper extends Activity {
 		setWallpaper.setOnClickListener(new OnClickListener() {
 				public void onClick(View view) {
 					try {
-						
-						
+												
 						String suggestHTxt = nph.getText().toString();
 						String suggestWTxt = npw.getText().toString();
 						
@@ -180,6 +183,19 @@ public class StreakSetWallpaper extends Activity {
 						
 						//public void setWallpaperOffsets (IBinder windowToken, float xOffset, float yOffset)
 						//wpm.setWallpaperOffsets(imageView.getWindowToken(),400,400);
+						
+						// Actually, I think all the rest of this program is irrelevant. 
+						// What seems to be the problem is that Android has the wallpaper set 
+						// with portrait suggested dimensions.  So to fix it, we need to suggest 
+						// the correct landscape dimensions.  Once suggested, they seem to stick 
+						// until you rotate to portrait again... That is, once this program is 
+						// used once, you can then go to gallery or wherever and it'll present you
+						// with the correct landscape crop selection, at least until you do a 
+						// portrait screen rotation.  
+						
+						// If you reboot with a wallpaper correctly set, when it comes back up
+						// the wallpaper will be scaled and cropped oddly because this suggest value
+						// gets reset... 
 						wpm.suggestDesiredDimensions(suggestH,suggestW);
 
 						System.err.println("AFTER minWidth:"+wpm.getDesiredMinimumWidth());						
