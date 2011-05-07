@@ -60,11 +60,15 @@ public class StreakSetWallpaper extends Activity {
 	ImageView imageView;
 	Drawable wallpaperDrawable;
 	
+	// This is because setSuggested expects width to be portrait width... sigh. 
 	int suggestH = 1200;
 	int suggestW = 480;
 	
 	EditText nph;
 	EditText npw;
+	TextView tv;
+	
+	Uri mSavedUri;
 	
 	private EditText mEditor;
 
@@ -113,6 +117,17 @@ public class StreakSetWallpaper extends Activity {
 		Button selectWallpaper = (Button) findViewById(R.id.selectWallpaper);
 		selectWallpaper.setOnClickListener(new OnClickListener(){
 			public void onClick(View view){
+				
+				String suggestHTxt = nph.getText().toString();
+				String suggestWTxt = npw.getText().toString();				
+				suggestH = Integer.parseInt(suggestHTxt);
+				suggestW = Integer.parseInt(suggestWTxt);			
+				wpm.suggestDesiredDimensions(suggestH,suggestW);
+				System.err.println("Select suggest minWidth:"+wpm.getDesiredMinimumWidth());						
+				System.err.println("Select suggest minHeight:"+wpm.getDesiredMinimumHeight());
+				
+				
+				// Create an intent to send to the media picker...
 				Intent i = new Intent(Intent.ACTION_PICK,
 					android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI);
 					
@@ -121,20 +136,27 @@ public class StreakSetWallpaper extends Activity {
 				// Return the data in the Intent... risky for big data.  Some people save to temp
 				// file instead, and maybe I'll be forced to do that eventually, but I'd rather not...
 				// see: http://stackoverflow.com/questions/4516997/fail-to-crop-for-large-images
-				// for alternative.... I think I have no choice really now...
+				// for alternative.... I think I have no choice really now...				
+				//i.putExtra("return-data",true);	
 				
+				// OK, I give in... it's just not made to return that much data... so, save it to file...
+				mSavedUri = Uri.fromFile(new File("/sdcard/StreakSetWall.jpg"));
+				i.putExtra("output",mSavedUri);
 				
-				i.putExtra("return-data",true);	
 				
 				// Putting these in causes frequent failures instead of occasional failures without. 
-				//i.putExtra("outputX", 1200); 
-				//i.putExtra("outputY", 480);
+				// Not sure why...
+				i.putExtra("outputX", suggestH); 
+				i.putExtra("outputY", suggestW);
 				
 				//i.putExtra("setWallpaper", true);  // This doesn't seem to do anything.
 				
-				i.putExtra("aspectX", 5);
-			  i.putExtra("aspectY", 2);
-			  i.putExtra("scale", true);  // I seem to get fewer FAILED BINDER TRANSACTIONS with this in.
+				i.putExtra("aspectX", suggestH);
+			  i.putExtra("aspectY", suggestW);
+			
+				// I seem to get fewer FAILED BINDER TRANSACTIONS with this in, though it's not 
+				// completely obvious to me what it's doing. 
+			  i.putExtra("scale", true);  
 																					
 				startActivityForResult(i, ACTIVITY_SELECT_IMAGE);
 			}
@@ -198,8 +220,8 @@ public class StreakSetWallpaper extends Activity {
 						// gets reset... 
 						wpm.suggestDesiredDimensions(suggestH,suggestW);
 
-						System.err.println("AFTER minWidth:"+wpm.getDesiredMinimumWidth());						
-						System.err.println("AFTER minHeight:"+wpm.getDesiredMinimumHeight());
+						System.err.println("setWallpaper minWidth:"+wpm.getDesiredMinimumWidth());						
+						System.err.println("setWallpaper minHeight:"+wpm.getDesiredMinimumHeight());
 						
 						wpm.setBitmap(imageView.getDrawingCache());																		
 						finish();
@@ -220,28 +242,37 @@ public class StreakSetWallpaper extends Activity {
 		if (resultCode == Activity.RESULT_OK) {
 			if (requestCode == ACTIVITY_SELECT_IMAGE) {
 				try{
-										
-					final Bundle extras = data.getExtras();
-					if (extras != null) {
-						Bitmap wallpaperBmp = extras.getParcelable("data");
-						wallpaperDrawable = new BitmapDrawable(wallpaperBmp);
-					}else{
-						System.err.println("extras == null");
-					}
+					
+					//Uri selectedImage = data.getData();
+					InputStream imageStream = getContentResolver().openInputStream(mSavedUri);
+					wallpaperDrawable = Drawable.createFromStream(imageStream,"Gallery");
+					
+					// This works fine, unless the data being returned is too large...					
+					//final Bundle extras = data.getExtras();
+					//if (extras != null) {
+					//	Bitmap wallpaperBmp = extras.getParcelable("data");
+					//	wallpaperDrawable = new BitmapDrawable(wallpaperBmp);
+					//}else{
+					//	System.err.println("extras == null");
+					//}
 
 					int height = wallpaperDrawable.getIntrinsicHeight();
 					int width = wallpaperDrawable.getIntrinsicWidth();
 					String infoStr;														
-					infoStr = String.format("Width: %d  Height: %d",width,height);
+					infoStr = String.format("Cropped Width: %d  Height: %d",width,height);
 					
 					// Display some information about it...
-					LinearLayout linearLayout = (LinearLayout)findViewById(R.id.linearlayout);
-					TextView tv = new TextView(this);
+
+					if (tv == null){
+						// Create a text view if first time...
+						LinearLayout linearLayout = (LinearLayout)findViewById(R.id.linearlayout);
+						tv = new TextView(this);
+						linearLayout.addView(tv);
+					}
+
 					tv.setText(infoStr);
 					System.err.println(infoStr);
-					linearLayout.addView(tv);
-					
-									
+														
 					imageView.setDrawingCacheEnabled(true);
 					imageView.setImageDrawable(wallpaperDrawable);	
 				}catch(Exception e){
